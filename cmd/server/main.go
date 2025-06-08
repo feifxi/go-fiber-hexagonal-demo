@@ -8,6 +8,7 @@ import (
 	"chanombude/super-hexagonal/config"
 	"chanombude/super-hexagonal/internal/api/rest/handler"
 	"chanombude/super-hexagonal/internal/domain"
+	"chanombude/super-hexagonal/internal/middleware"
 	"chanombude/super-hexagonal/internal/repository"
 	"chanombude/super-hexagonal/internal/service"
 	"chanombude/super-hexagonal/pkg"
@@ -19,11 +20,14 @@ func main() {
 
 	// Initialize database
 	db := pkg.ConnectDB(cfg.DBDSN)
-	db.AutoMigrate(&domain.User{}, &domain.Product{}, &domain.Order{}, &domain.OrderItem{})
+	db.AutoMigrate(&domain.User{})
 	fmt.Println("=== Database migration completed ===")
 
 	// Initialize Fiber app
 	app := fiber.New()
+
+	// Add middleware
+	app.Use(middleware.ErrorHandler())
 
 	// Initialize dependencies
 	userRepo := repository.NewUserRepository(db)

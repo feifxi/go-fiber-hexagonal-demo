@@ -2,6 +2,7 @@ package service
 
 import (
 	"chanombude/super-hexagonal/internal/domain"
+	"chanombude/super-hexagonal/internal/pkg/errors"
 	"chanombude/super-hexagonal/internal/repository"
 )
 
@@ -27,28 +28,33 @@ func (s *userService) Register(user *domain.User) error {
 		return err
 	}
 	if exists {
-		return domain.ErrEmailAlreadyExists
+		return errors.NewConflictError("CONFLICT_EMAIL", "this email already registered")
 	}
 
 	newUser, err := domain.NewUser(user.Name, user.Email, user.Password)
 	if err != nil {
+		return errors.NewValidationError("INVALID_PASSWORD", "invalid password format")
+	}
+
+	if err := s.userRepo.Save(newUser); err != nil {
 		return err
 	}
 
-	return s.userRepo.Save(newUser)
+	return nil
 }
 
 func (s *userService) GetAll() ([]domain.User, error) {
-	return s.userRepo.FindAll()
+	users, err := s.userRepo.FindAll()
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 func (s *userService) GetById(id uint) (*domain.User, error) {
 	user, err := s.userRepo.FindById(id)
 	if err != nil {
 		return nil, err
-	}
-	if user == nil {
-		return nil, domain.ErrUserNotFound
 	}
 	return user, nil
 }
