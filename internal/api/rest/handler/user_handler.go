@@ -1,21 +1,19 @@
 package handler
 
 import (
-	"strconv"
-
 	"github.com/gofiber/fiber/v2"
 
 	"chanombude/super-hexagonal/internal/api/rest/dto"
-	"chanombude/super-hexagonal/internal/domain/errors"
-	"chanombude/super-hexagonal/internal/domain/ports/primary"
+	"chanombude/super-hexagonal/internal/domain"
+	"chanombude/super-hexagonal/internal/service"
 	"chanombude/super-hexagonal/pkg"
 )
 
 type UserHandler struct {
-	userService primary.UserService
+	userService service.UserService
 }
 
-func NewUserHandler(service primary.UserService) *UserHandler {
+func NewUserHandler(service service.UserService) *UserHandler {
 	return &UserHandler{
 		userService: service,
 	}
@@ -29,24 +27,28 @@ func (h *UserHandler) RegisterRoutes(app *fiber.App) {
 }
 
 func (h *UserHandler) Register(c *fiber.Ctx) error {
-	var req dto.RegisterUserRequest
-	if err := c.BodyParser(&req); err != nil {
+	var body dto.RegisterUserRequest
+	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
 		})
 	}
 
-	if err := pkg.ValidateDTO.Struct(req); err != nil {
+	if err := pkg.ValidateDTO.Struct(body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Validation failed",
 			"details": err.Error(),
 		})
 	}
-
-	err := h.userService.Register(req.Name, req.Email, req.Password)
+	user := &domain.User{
+		Name: body.Name,
+		Email: body.Email,
+		Password: body.Password,
+	}
+	err := h.userService.Register(user)
 	if err != nil {
 		switch err {
-		case errors.ErrEmailAlreadyExists:
+		case domain.ErrEmailAlreadyExists:
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
 				"error": err.Error(),
 			})
@@ -72,7 +74,7 @@ func (h *UserHandler) GetAll(c *fiber.Ctx) error {
 }
 
 func (h *UserHandler) GetById(c *fiber.Ctx) error {
-	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
+	id, err := c.ParamsInt("id")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid user ID",
@@ -82,7 +84,7 @@ func (h *UserHandler) GetById(c *fiber.Ctx) error {
 	user, err := h.userService.GetById(uint(id))
 	if err != nil {
 		switch err {
-		case errors.ErrUserNotFound:
+		case domain.ErrUserNotFound:
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"error": err.Error(),
 			})

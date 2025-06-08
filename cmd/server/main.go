@@ -7,9 +7,9 @@ import (
 
 	"chanombude/super-hexagonal/config"
 	"chanombude/super-hexagonal/internal/api/rest/handler"
-	"chanombude/super-hexagonal/internal/domain/model"
-	"chanombude/super-hexagonal/internal/service"
+	"chanombude/super-hexagonal/internal/domain"
 	"chanombude/super-hexagonal/internal/repository"
+	"chanombude/super-hexagonal/internal/service"
 	"chanombude/super-hexagonal/pkg"
 )
 
@@ -19,7 +19,7 @@ func main() {
 
 	// Initialize database
 	db := pkg.ConnectDB(cfg.DBDSN)
-	db.AutoMigrate(&model.User{})
+	db.AutoMigrate(&domain.User{}, &domain.Product{}, &domain.Order{}, &domain.OrderItem{})
 	fmt.Println("=== Database migration completed ===")
 
 	// Initialize Fiber app
@@ -30,8 +30,13 @@ func main() {
 	userService := service.NewUserService(userRepo)
 	userHandler := handler.NewUserHandler(userService)
 
+	productRepo := repository.NewProductRepository(db)
+	productService := service.NewProductService(productRepo)
+	productHandler := handler.NewProductHandler(productService)
+
 	// Register routes
 	userHandler.RegisterRoutes(app)
+	productHandler.RegisterRoutes(app)
 
 	// Start server
 	fmt.Printf("Server starting on port %s...\n", cfg.Port)
