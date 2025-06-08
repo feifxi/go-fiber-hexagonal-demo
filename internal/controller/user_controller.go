@@ -1,48 +1,51 @@
-package handler
+package controller
 
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"chanombude/super-hexagonal/internal/api/rest/dto"
-	"chanombude/super-hexagonal/internal/domain"
-	"chanombude/super-hexagonal/internal/pkg/errors"
+	"chanombude/super-hexagonal/internal/model"
+	"chanombude/super-hexagonal/internal/dto"
 	"chanombude/super-hexagonal/internal/service"
-	"chanombude/super-hexagonal/pkg"
+	"chanombude/super-hexagonal/pkg/errors"
+	"chanombude/super-hexagonal/pkg/validator"
 )
 
-type UserHandler struct {
+type UserController struct {
 	userService service.UserService
 }
 
-func NewUserHandler(service service.UserService) *UserHandler {
-	return &UserHandler{
+func NewUserController(service service.UserService) *UserController {
+	return &UserController{
 		userService: service,
 	}
 }
 
-func (h *UserHandler) RegisterRoutes(app *fiber.App) {
+func (h *UserController) RegisterRoutes(app *fiber.App) {
 	r := app.Group("/users")
 	r.Post("/register", h.Register)
 	r.Get("/", h.GetAll)
 	r.Get("/:id", h.GetById)
 }
 
-func (h *UserHandler) Register(c *fiber.Ctx) error {
+func (h *UserController) Register(c *fiber.Ctx) error {
 	var body dto.RegisterUserRequest
 	if err := c.BodyParser(&body); err != nil {
 		return errors.NewValidationError("INVALID_REQUEST", "invalid request body")
 	}
 
-	// Validate the request
+	// // Validate the request
+    if errs := validator.ValidateStruct(body); errs != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Validation failed",
+			"errors":  errs,
+		})
+    }
+
     // if errs := validator.ValidateStruct(body); len(errs) > 0 {
     //     return errors.NewValidationError("VALIDATION_FAILED", errs[0].Message)
     // }
-
-	if err := pkg.ValidateDTO.Struct(body); err != nil {
-		return errors.NewValidationError("VALIDATION_FAILED", err.Error())
-	}
-
-	user := &domain.User{
+	
+	user := &model.User{
 		Name:     body.Name,
 		Email:    body.Email,
 		Password: body.Password,
@@ -55,7 +58,7 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusCreated)
 }
 
-func (h *UserHandler) GetAll(c *fiber.Ctx) error {
+func (h *UserController) GetAll(c *fiber.Ctx) error {
 	users, err := h.userService.GetAll()
 	if err != nil {
 		return err
@@ -64,7 +67,7 @@ func (h *UserHandler) GetAll(c *fiber.Ctx) error {
 	return c.JSON(users)
 }
 
-func (h *UserHandler) GetById(c *fiber.Ctx) error {
+func (h *UserController) GetById(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return errors.NewValidationError("INVALID_ID", "invalid user ID")

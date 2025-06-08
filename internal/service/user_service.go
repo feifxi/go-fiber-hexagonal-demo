@@ -1,15 +1,15 @@
 package service
 
 import (
-	"chanombude/super-hexagonal/internal/domain"
-	"chanombude/super-hexagonal/internal/pkg/errors"
+	"chanombude/super-hexagonal/internal/model"
+	"chanombude/super-hexagonal/pkg/errors"
 	"chanombude/super-hexagonal/internal/repository"
 )
 
 type UserService interface {
-	Register(user *domain.User) error
-	GetAll() ([]domain.User, error)
-	GetById(id uint) (*domain.User, error)
+	Register(user *model.User) error
+	GetAll() ([]model.User, error)
+	GetById(id uint) (*model.User, error)
 }
 
 type userService struct {
@@ -22,7 +22,7 @@ func NewUserService(repo repository.UserRepository) UserService {
 	}
 }
 
-func (s *userService) Register(user *domain.User) error {
+func (s *userService) Register(user *model.User) error {
 	exists, err := s.userRepo.ExistsByEmail(user.Email)
 	if err != nil {
 		return err
@@ -31,7 +31,7 @@ func (s *userService) Register(user *domain.User) error {
 		return errors.NewConflictError("CONFLICT_EMAIL", "this email already registered")
 	}
 
-	newUser, err := domain.NewUser(user.Name, user.Email, user.Password)
+	newUser, err := model.NewUser(user.Name, user.Email, user.Password)
 	if err != nil {
 		return errors.NewValidationError("INVALID_PASSWORD", "invalid password format")
 	}
@@ -43,7 +43,7 @@ func (s *userService) Register(user *domain.User) error {
 	return nil
 }
 
-func (s *userService) GetAll() ([]domain.User, error) {
+func (s *userService) GetAll() ([]model.User, error) {
 	users, err := s.userRepo.FindAll()
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (s *userService) GetAll() ([]domain.User, error) {
 	return users, nil
 }
 
-func (s *userService) GetById(id uint) (*domain.User, error) {
+func (s *userService) GetById(id uint) (*model.User, error) {
 	user, err := s.userRepo.FindById(id)
 	if err != nil {
 		return nil, err

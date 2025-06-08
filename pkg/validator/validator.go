@@ -1,6 +1,8 @@
 package validator
 
 import (
+	"fmt"
+	"reflect"
 	"regexp"
 
 	"github.com/go-playground/validator/v10"
@@ -21,6 +23,47 @@ func Get() *validator.Validate {
 	return validate
 }
 
+func ValidateStruct(s interface{}) map[string]string {	
+	err := validate.Struct(s)
+	if validationErrors, ok := err.(validator.ValidationErrors); ok {
+		// Create a map to store field-specific error messages
+		errorsMap := make(map[string]string)
+		for _, fieldError := range validationErrors {
+			// Customize the error message based on the field and tag
+			switch fieldError.Tag() {
+			case "required":
+				errorsMap[fieldError.Field()] = fmt.Sprintf("%s is required.", fieldError.Field())
+			case "min":
+				errorsMap[fieldError.Field()] = fmt.Sprintf("%s must be at least %s characters long.", fieldError.Field(), fieldError.Param())
+			case "max":
+				errorsMap[fieldError.Field()] = fmt.Sprintf("%s cannot exceed %s characters.", fieldError.Field(), fieldError.Param())
+			case "email":
+				errorsMap[fieldError.Field()] = fmt.Sprintf("%s must be a valid email address.", fieldError.Field())
+			case "alpha":
+				errorsMap[fieldError.Field()] = fmt.Sprintf("%s must contain only alphabetic characters.", fieldError.Field())
+			// Add more cases for other validation tags as needed
+			default:
+				errorsMap[fieldError.Field()] = getCustomErrorMessage(s, fieldError.Field())
+			}
+		}
+		return errorsMap
+	}
+	return nil
+}
+
+func getCustomErrorMessage(s interface{}, field string) string {
+	t := reflect.TypeOf(s)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if f, ok := t.FieldByName(field); ok {
+		if msg, ok := f.Tag.Lookup("vmsg"); ok {
+			return msg
+		}
+	}
+	return fmt.Sprintf("invalid %s field.", field)
+}
+
 func registerCustomValidations(v *validator.Validate) {
 	// Register password validation
 	v.RegisterValidation("password", validatePassword)
@@ -37,11 +80,6 @@ func registerCustomValidations(v *validator.Validate) {
 // - At least one special character
 func validatePassword(fl validator.FieldLevel) bool {
 	password := fl.Field().String()
-
-	// Check length
-	if len(password) < 8 {
-		return false
-	}
 
 	// Check for uppercase
 	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)

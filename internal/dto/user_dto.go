@@ -6,9 +6,9 @@ import (
 
 type (
 	RegisterUserRequest struct {
-		Name     string `json:"name" validate:"required,name" vmsg:"Name must be between 2-50 characters and contain only letters, spaces, and hyphens"`
+		Name     string `json:"name" validate:"required,min=3,name" vmsg:"Name must be between 2-50 characters and contain only letters, spaces, and hyphens"`
 		Email    string `json:"email" validate:"required,email" vmsg:"Please provide a valid email address"`
-		Password string `json:"password" validate:"required,password" vmsg:"Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character"`
+		Password string `json:"password" validate:"required,min=8,max=30,password" vmsg:"Password must be contain uppercase, lowercase, number, and special character"`
 	}
 
 	UserResponse struct {
@@ -37,7 +37,7 @@ func (r *RegisterUserRequest) GetValidationErrors() map[string]string {
 	t := reflect.TypeOf(*r)
 
 	// Iterate through fields
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		field := t.Field(i)
 
 		// Get validation message

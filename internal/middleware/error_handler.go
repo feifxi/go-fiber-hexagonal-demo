@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"chanombude/super-hexagonal/internal/pkg/errors"
+	"chanombude/super-hexagonal/pkg/errors"
 )
 
 func ErrorHandler() fiber.Handler {
@@ -40,7 +40,7 @@ func ErrorHandler() fiber.Handler {
 
 		// Handle other errors
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "internal server error",
+			"error": err.Error(),
 		})
 	}
 } 

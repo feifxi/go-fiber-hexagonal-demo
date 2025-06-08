@@ -6,13 +6,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"chanombude/super-hexagonal/config"
-	"chanombude/super-hexagonal/internal/api/rest/handler"
-	"chanombude/super-hexagonal/internal/domain"
+	"chanombude/super-hexagonal/internal/controller"
+	"chanombude/super-hexagonal/internal/model"
 	"chanombude/super-hexagonal/internal/middleware"
-	"chanombude/super-hexagonal/internal/pkg/validator"
 	"chanombude/super-hexagonal/internal/repository"
 	"chanombude/super-hexagonal/internal/service"
-	"chanombude/super-hexagonal/pkg"
+	"chanombude/super-hexagonal/pkg/validator"
+	"chanombude/super-hexagonal/pkg/database"
 )
 
 func main() {
@@ -23,8 +23,8 @@ func main() {
 	validator.Init()
 
 	// Initialize database
-	db := pkg.ConnectDB(cfg.DBDSN)
-	db.AutoMigrate(&domain.User{}, &domain.Product{}, &domain.Order{}, &domain.OrderItem{})
+	db := database.ConnectDB(cfg.DBDSN)
+	db.AutoMigrate(&model.User{})
 	fmt.Println("=== Database migration completed ===")
 
 	// Initialize Fiber app
@@ -36,15 +36,10 @@ func main() {
 	// Initialize dependencies
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
-	userHandler := handler.NewUserHandler(userService)
-
-	productRepo := repository.NewProductRepository(db)
-	productService := service.NewProductService(productRepo)
-	productHandler := handler.NewProductHandler(productService)
+	userHandler :=  controller.NewUserController(userService)
 
 	// Register routes
 	userHandler.RegisterRoutes(app)
-	productHandler.RegisterRoutes(app)
 
 	// Start server
 	fmt.Printf("Server starting on port %s...\n", cfg.Port)
