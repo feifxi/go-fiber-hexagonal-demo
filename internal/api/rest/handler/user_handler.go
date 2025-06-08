@@ -33,6 +33,11 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 		return errors.NewValidationError("INVALID_REQUEST", "invalid request body")
 	}
 
+	// Validate the request
+    // if errs := validator.ValidateStruct(body); len(errs) > 0 {
+    //     return errors.NewValidationError("VALIDATION_FAILED", errs[0].Message)
+    // }
+
 	if err := pkg.ValidateDTO.Struct(body); err != nil {
 		return errors.NewValidationError("VALIDATION_FAILED", err.Error())
 	}
