@@ -1,32 +1,50 @@
 package service
 
 import (
-	userDomain "chanombude/super-hexagonal/internal/domain/user"
+	"chanombude/super-hexagonal/internal/domain/errors"
+	"chanombude/super-hexagonal/internal/domain/model"
+	"chanombude/super-hexagonal/internal/domain/ports/primary"
+	"chanombude/super-hexagonal/internal/domain/ports/secondary"
 )
 
 type userService struct {
-	repo userDomain.Repository
+	userRepo secondary.UserRepository
 }
 
-func NewUserService(r userDomain.Repository) userDomain.Service {
-	return &userService{repo: r}
+func NewUserService(repo secondary.UserRepository) primary.UserService {
+	return &userService{
+		userRepo: repo,
+	}
 }
 
-func (s *userService) Register(user *userDomain.User) error {
-	isExists, err := s.repo.ExistsByEmail(user.Email);
-	if  err != nil {
+func (s *userService) Register(name, email, password string) error {
+	exists, err := s.userRepo.ExistsByEmail(email)
+	if err != nil {
 		return err
 	}
-	if isExists {
-		return userDomain.ErrEmailAlreadyExists
+	if exists {
+		return errors.ErrEmailAlreadyExists
 	}
-	return s.repo.Save(user)
+
+	user, err := model.NewUser(name, email, password)
+	if err != nil {
+		return err
+	}
+
+	return s.userRepo.Save(user)
 }
 
-func (s *userService) GetAll() ([]userDomain.User, error) {
-	return s.repo.FindAll()
+func (s *userService) GetAll() ([]model.User, error) {
+	return s.userRepo.FindAll()
 }
 
-func (s *userService) GetById(id uint) (*userDomain.User, error) {
-	return s.repo.FindById(id)
+func (s *userService) GetById(id uint) (*model.User, error) {
+	user, err := s.userRepo.FindById(id)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.ErrUserNotFound
+	}
+	return user, nil
 }
