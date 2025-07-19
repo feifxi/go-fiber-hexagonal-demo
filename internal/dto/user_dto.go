@@ -1,9 +1,5 @@
 package dto
 
-import (
-	"reflect"
-)
-
 type (
 	RegisterUserRequest struct {
 		Name     string `json:"name" validate:"required,min=3,name" vmsg:"Name must be between 2-50 characters and contain only letters, spaces, and hyphens"`
@@ -29,22 +25,3 @@ type (
 	}
 )
 
-// GetValidationErrors returns a map of field names to error messages
-func (r *RegisterUserRequest) GetValidationErrors() map[string]string {
-	errors := make(map[string]string)
-
-	// Get struct type
-	t := reflect.TypeOf(*r)
-
-	// Iterate through fields
-	for i := range t.NumField() {
-		field := t.Field(i)
-
-		// Get validation message
-		if msg, ok := field.Tag.Lookup("vmsg"); ok {
-			errors[field.Name] = msg
-		}
-	}
-
-	return errors
-}
