@@ -3,18 +3,18 @@ package controller
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"chanombude/super-hexagonal/internal/model"
 	"chanombude/super-hexagonal/internal/dto"
-	"chanombude/super-hexagonal/internal/service"
+	"chanombude/super-hexagonal/internal/model"
+	"chanombude/super-hexagonal/internal/port"
 	"chanombude/super-hexagonal/pkg/errors"
 	"chanombude/super-hexagonal/pkg/validator"
 )
 
 type UserController struct {
-	userService service.UserService
+	userService port.UserService
 }
 
-func NewUserController(service service.UserService) *UserController {
+func NewUserController(service port.UserService) *UserController {
 	return &UserController{
 		userService: service,
 	}

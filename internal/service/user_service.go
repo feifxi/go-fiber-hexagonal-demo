@@ -2,21 +2,15 @@ package service
 
 import (
 	"chanombude/super-hexagonal/internal/model"
+	"chanombude/super-hexagonal/internal/port"
 	"chanombude/super-hexagonal/pkg/errors"
-	"chanombude/super-hexagonal/internal/repository"
 )
 
-type UserService interface {
-	Register(user *model.User) error
-	GetAll() ([]model.User, error)
-	GetById(id uint) (*model.User, error)
-}
-
 type userService struct {
-	userRepo repository.UserRepository
+	userRepo port.UserRepository
 }
 
-func NewUserService(repo repository.UserRepository) UserService {
+func NewUserService(repo port.UserRepository) port.UserService {
 	return &userService{
 		userRepo: repo,
 	}

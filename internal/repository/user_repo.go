@@ -2,23 +2,17 @@ package repository
 
 import (
 	"chanombude/super-hexagonal/internal/model"
+	"chanombude/super-hexagonal/internal/port"
 	"chanombude/super-hexagonal/pkg/errors"
 
 	"gorm.io/gorm"
 )
 
-type UserRepository interface {
-	Save(user *model.User) error
-	FindAll() ([]model.User, error)
-	FindById(id uint) (*model.User, error)
-	ExistsByEmail(email string) (bool, error)
-}
-
 type userRepository struct {
 	db *gorm.DB
 }
 
-func NewUserRepository(db *gorm.DB) UserRepository {
+func NewUserRepository(db *gorm.DB) port.UserRepository {
 	return &userRepository{db: db}
 }
 
